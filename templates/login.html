@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iniciar sesión · SmartFact</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body class="login-body">
+  <main class="auth-shell">
+    <section class="auth-form-panel" aria-labelledby="login-title">
+      <a class="auth-brand" href="{{ url_for('login') }}"><span class="auth-brand-icon"><i class="bi bi-receipt-cutoff"></i></span> Smart<strong>Fact</strong></a>
+      <div class="auth-form-content">
+        <span class="auth-kicker">GESTIÓN INTELIGENTE PARA TU NEGOCIO</span>
+        <h1 id="login-title">Iniciar sesión</h1>
+        <p class="auth-description">Ingresa a tu cuenta y continúa gestionando tu negocio.</p>
+        {% with messages=get_flashed_messages(with_categories=true) %}
+          {% for category,message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}
+        {% endwith %}
+        <form method="post" class="auth-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="auth-field">
+            <label for="email">Correo electrónico</label>
+            <div class="auth-input-wrap"><i class="bi bi-envelope" aria-hidden="true"></i><input type="email" id="email" name="email" autocomplete="username" placeholder="tu@negocio.com" value="{{ email|default('') }}" required></div>
+          </div>
+          <div class="auth-field">
+            <label for="password">Contraseña</label>
+            <div class="auth-input-wrap"><i class="bi bi-lock" aria-hidden="true"></i><input type="password" id="password" name="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required><button class="auth-password-toggle password-toggle" type="button" data-target="password" aria-label="Mostrar contraseña" title="Mostrar contraseña"><i class="bi bi-eye"></i></button></div>
+          </div>
+          <button class="auth-submit" type="submit">Entrar <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+        </form>
+        <p class="auth-mobile-register">¿Aún no tienes cuenta? <a href="{{ url_for('register') }}" data-auth-transition>Registra tu negocio</a></p>
+      </div>
+      <p class="auth-legal">© SmartFact · Administración simple, negocio en orden</p>
+    </section>
+    <aside class="auth-welcome-panel">
+      <div class="auth-welcome-content">
+        <span class="auth-welcome-icon"><i class="bi bi-graph-up-arrow"></i></span>
+        <h2>¡Hola de nuevo!</h2>
+        <p>Tu negocio está a un paso de tenerlo todo en orden.</p>
+        <span class="auth-panel-divider"></span>
+        <p class="auth-welcome-question">¿Todavía no tienes una cuenta?</p>
+        <a class="auth-register-link" href="{{ url_for('register') }}" data-auth-transition>Registrar negocio</a>
+      </div>
+      <span class="auth-decoration auth-decoration-one"></span><span class="auth-decoration auth-decoration-two"></span>
+    </aside>
+  </main>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Panel · SmartFact{% endblock %}
+{% block page_title %}Panel{% endblock %}
+{% block content %}
+<div class="dashboard-page">
+  <section class="dashboard-welcome">
+    <div>
+      <span class="dashboard-eyebrow">RESUMEN DEL NEGOCIO</span>
+      <h2>¡Hola, {{ usuario.name.split()[0] }}! <span class="greeting-wave"></span></h2>
+      <p>Este es el resumen de actividad de <strong>{{ usuario.business_name }}</strong>.</p>
+    </div>
+    <div class="dashboard-welcome-actions">
+      <span class="dashboard-date"><i class="bi bi-calendar3"></i>{{ period_end.strftime('%d %b %Y') }}</span>
+      <a href="{{ url_for('subir_factura') }}" class="btn dashboard-primary-action"><i class="bi bi-plus-lg"></i> Cargar factura</a>
+    </div>
+  </section>
+
+  <form class="dashboard-period-filter" method="get" action="{{ url_for('dashboard') }}">
+    <div><span class="filter-label">Período</span><span class="filter-range">{{ period_start.strftime('%d %b %Y') }} – {{ period_end.strftime('%d %b %Y') }}</span></div>
+    <div class="filter-control"><label class="visually-hidden" for="dashboard-period">Seleccionar período</label><select id="dashboard-period" name="period"><option value="12m" {{ 'selected' if period == '12m' }}>Últimos 12 meses</option><option value="year" {{ 'selected' if period == 'year' }}>Año actual</option><option value="24m" {{ 'selected' if period == '24m' }}>Últimos 24 meses</option></select><button type="submit">Aplicar</button></div>
+  </form>
+
+  <section class="dashboard-metrics" aria-label="Indicadores del negocio">
+    <article class="dashboard-metric metric-blue"><div class="metric-top"><span>Facturas procesadas</span><span class="metric-icon"><i class="bi bi-receipt"></i></span></div><strong>{{ stats.invoices }}</strong><div class="metric-foot"><span>Confirmadas en el período</span>{% if previous_stats.invoices > 0 %}<span class="metric-comparison {{ 'positive' if stats.invoices >= previous_stats.invoices else 'negative' }}"><i class="bi {{ 'bi-arrow-up-right' if stats.invoices >= previous_stats.invoices else 'bi-arrow-down-right' }}"></i>{{ (((stats.invoices - previous_stats.invoices) / previous_stats.invoices) * 100)|round|int|abs }}%</span>{% endif %}</div></article>
+    <article class="dashboard-metric metric-violet"><div class="metric-top"><span>Total de compras</span><span class="metric-icon"><i class="bi bi-currency-dollar"></i></span></div><strong class="metric-currency">${{ '{:,.0f}'.format(stats.spent) }}</strong><div class="metric-foot"><span>Compras confirmadas</span>{% if previous_stats.spent > 0 %}<span class="metric-comparison {{ 'positive' if stats.spent >= previous_stats.spent else 'negative' }}"><i class="bi {{ 'bi-arrow-up-right' if stats.spent >= previous_stats.spent else 'bi-arrow-down-right' }}"></i>{{ (((stats.spent - previous_stats.spent) / previous_stats.spent) * 100)|round|int|abs }}%</span>{% endif %}</div></article>
+    <article class="dashboard-metric metric-teal"><div class="metric-top"><span>Productos registrados</span><span class="metric-icon"><i class="bi bi-box-seam"></i></span></div><strong>{{ products }}</strong><div class="metric-foot"><span>En el inventario</span><a href="{{ url_for('inventario') }}">Ver inventario <i class="bi bi-arrow-up-right"></i></a></div></article>
+    <article class="dashboard-metric metric-amber"><div class="metric-top"><span>Proveedores</span><span class="metric-icon"><i class="bi bi-truck"></i></span></div><strong>{{ suppliers }}</strong><div class="metric-foot"><span>Registrados en el sistema</span><a href="{{ url_for('proveedores') }}">Ver proveedores <i class="bi bi-arrow-up-right"></i></a></div></article>
+  </section>
+
+  <section class="dashboard-analytics-grid" aria-label="Análisis de compras">
+    <article class="dashboard-card purchases-chart-card">
+      <div class="dashboard-card-heading"><div><span class="dashboard-eyebrow">TENDENCIA</span><h3>Evolución de compras</h3><p>Valor mensual de facturas confirmadas</p></div><span class="card-heading-icon blue-soft"><i class="bi bi-bar-chart-line"></i></span></div>
+      <div id="purchases-chart" class="purchases-chart" role="img" aria-label="Gráfico de compras por mes" data-empty="No hay compras confirmadas en este período."></div>
+    </article>
+    <article class="dashboard-card supplier-chart-card">
+      <div class="dashboard-card-heading"><div><span class="dashboard-eyebrow">DISTRIBUCIÓN</span><h3>Compras por proveedor</h3><p>Participación sobre el gasto confirmado</p></div><span class="card-heading-icon violet-soft"><i class="bi bi-pie-chart"></i></span></div>
+      <div class="supplier-chart-layout"><div id="supplier-donut" class="supplier-donut" role="img" aria-label="Distribución de compras por proveedor"></div><div id="supplier-legend" class="supplier-legend"></div></div>
+    </article>
+  </section>
+
+  <section class="dashboard-insights-grid">
+    <article class="dashboard-card insight-card">
+      <div class="dashboard-card-heading"><div><span class="dashboard-eyebrow">MAYOR VOLUMEN</span><h3>Productos más comprados</h3><p>Por cantidad registrada en facturas</p></div><a class="subtle-link" href="{{ url_for('inventario') }}">Inventario <i class="bi bi-arrow-up-right"></i></a></div>
+      {% if top_products %}<div class="ranked-list">{% for product in top_products %}<div class="ranked-row"><span class="rank-number">{{ loop.index }}</span><span class="rank-name" title="{{ product.name }}">{{ product.name }}</span><span class="rank-value">{{ '{:,.0f}'.format(product.quantity) }} <small>unds.</small></span></div>{% endfor %}</div>{% else %}<div class="dashboard-empty"><i class="bi bi-box"></i><span>No hay productos en facturas para este período.</span></div>{% endif %}
+    </article>
+    <article class="dashboard-card insight-card">
+      <div class="dashboard-card-heading"><div><span class="dashboard-eyebrow">RELACIÓN COMERCIAL</span><h3>Proveedores principales</h3><p>Ordenados por valor de compras</p></div><a class="subtle-link" href="{{ url_for('proveedores') }}">Proveedores <i class="bi bi-arrow-up-right"></i></a></div>
+      {% if top_suppliers %}<div class="ranked-list">{% for supplier in top_suppliers[:4] %}<div class="ranked-row supplier-ranked-row"><span class="supplier-avatar">{{ supplier.name[:1]|upper }}</span><span class="rank-name" title="{{ supplier.name }}">{{ supplier.name }}</span><span class="rank-value">${{ '{:,.0f}'.format(supplier.total) }}</span></div>{% endfor %}</div>{% else %}<div class="dashboard-empty"><i class="bi bi-truck"></i><span>No hay compras para mostrar en este período.</span></div>{% endif %}
+    </article>
+  </section>
+
+  <section class="dashboard-card recent-activity-card">
+    <div class="dashboard-card-heading"><div><span class="dashboard-eyebrow">MOVIMIENTOS</span><h3>Actividad reciente</h3><p>Últimas facturas guardadas en SmartFact</p></div><a class="subtle-link" href="{{ url_for('facturas') }}">Ver todas las facturas <i class="bi bi-arrow-right"></i></a></div>
+    {% if ultimas_facturas %}<div class="table-responsive dashboard-table-wrap"><table class="table dashboard-table align-middle"><thead><tr><th>Número de factura</th><th>Proveedor</th><th>Fecha de compra</th><th>Productos</th><th class="text-end">Valor total</th><th>Estado</th><th aria-label="Detalle"></th></tr></thead><tbody>{% for invoice in ultimas_facturas %}<tr><td><a class="invoice-number" href="{{ url_for('invoice_detail', invoice_id=invoice.id) }}">{{ invoice.invoice_number }}</a><span class="invoice-ai-label"><i class="bi bi-stars"></i> IA</span></td><td>{{ invoice.supplier_name or 'Proveedor sin nombre' }}</td><td>{{ invoice.invoice_date.strftime('%d %b %Y') if invoice.invoice_date.strftime is defined else invoice.invoice_date }}</td><td>{{ invoice.item_count }}</td><td class="text-end invoice-total">${{ '{:,.2f}'.format(invoice.total) }}</td><td><span class="invoice-status {{ 'status-confirmed' if invoice.status == 'Confirmada' else 'status-cancelled' }}"><i class="bi {{ 'bi-check-circle-fill' if invoice.status == 'Confirmada' else 'bi-x-circle-fill' }}"></i>{{ invoice.status }}</span></td><td><a class="invoice-open" href="{{ url_for('invoice_detail', invoice_id=invoice.id) }}" aria-label="Consultar factura {{ invoice.invoice_number }}"><i class="bi bi-arrow-up-right"></i></a></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="dashboard-empty dashboard-empty-wide"><i class="bi bi-receipt"></i><strong>Aún no hay facturas registradas</strong><span>Carga una factura para comenzar a ver la actividad de tu negocio.</span><a href="{{ url_for('subir_factura') }}" class="btn dashboard-primary-action"><i class="bi bi-plus-lg"></i> Cargar primera factura</a></div>{% endif %}
+  </section>
+
+  <section class="dashboard-lower-grid">
+    <article class="dashboard-card smartfact-ai-card"><div class="ai-card-icon"><i class="bi bi-stars"></i></div><div class="ai-card-copy"><span class="dashboard-eyebrow">EXTRACCIÓN ASISTIDA</span><h3>SmartFact IA</h3><p>Las facturas cargadas pasan por extracción de datos y revisión antes de guardarse.</p><small>El sistema no registra una cola de pendientes ni errores de extracción en el panel.</small></div><div class="ai-card-count"><strong>{{ stats.invoices }}</strong><span>facturas confirmadas<br>en este período</span></div></article>
+    <article class="dashboard-card shortcuts-card"><div class="dashboard-card-heading"><div><span class="dashboard-eyebrow">A UN CLIC</span><h3>Accesos rápidos</h3></div></div><div class="quick-access-grid"><a href="{{ url_for('subir_factura') }}"><i class="bi bi-cloud-arrow-up"></i><span>Cargar factura</span><i class="bi bi-arrow-up-right quick-arrow"></i></a><a href="{{ url_for('facturas') }}"><i class="bi bi-receipt"></i><span>Consultar facturas</span><i class="bi bi-arrow-up-right quick-arrow"></i></a><a href="{{ url_for('proveedores') }}"><i class="bi bi-person-plus"></i><span>Registrar proveedor</span><i class="bi bi-arrow-up-right quick-arrow"></i></a><a href="{{ url_for('inventario') }}"><i class="bi bi-box-seam"></i><span>Revisar inventario</span><i class="bi bi-arrow-up-right quick-arrow"></i></a><a href="{{ url_for('reportes') }}"><i class="bi bi-file-earmark-bar-graph"></i><span>Generar reportes</span><i class="bi bi-arrow-up-right quick-arrow"></i></a></div></article>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  window.smartFactDashboard = {
+    months: {{ month_series|tojson }},
+    suppliers: {{ top_suppliers|tojson }},
+    totalSpent: {{ stats.spent|float|tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

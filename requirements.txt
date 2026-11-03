@@ -1,0 +1,6 @@
+Flask>=3.0,<4.0
+Flask-WTF>=1.2,<2.0
+mysql-connector-python>=8.3,<10.0
+google-genai>=1.0,<2.0
+argon2-cffi>=23.1,<26.0
+Werkzeug>=3.0,<4.0
